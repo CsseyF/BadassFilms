@@ -1,15 +1,23 @@
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
-WORKDIR /src
-
-COPY ["/BadassFilms.API/BadassFilms.API.csproj", "BadassFilms/"]
-RUN dotnet restore
-
-COPY . .
-RUN dotnet publish -c Release -o /app/publish
-
-FROM mcr.microsoft.com/dotnet/aspnet:9.0
+FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 WORKDIR /app
 
-COPY --from=build /app/publish .
+COPY BadassFilms.sln ./
+COPY BadassFilms.API/BadassFilms.API.csproj BadassFilms.API/
+COPY BadassFilms.Core/BadassFilms.Core.csproj BadassFilms.Core/
+COPY BadassFilms.Persistence/BadassFilms.Persistence.csproj BadassFilms.Persistence/
 
-ENTRYPOINT ["dotnet", "BadassFilms.dll"]
+WORKDIR /app/BadassFilms.API
+RUN dotnet restore
+
+WORKDIR /app
+COPY . .
+
+WORKDIR /app/BadassFilms.API
+RUN dotnet publish -c Release -o /publish
+
+FROM mcr.microsoft.com/dotnet/aspnet:7.0
+WORKDIR /app
+
+COPY --from=build /publish .
+
+ENTRYPOINT ["dotnet", "BadassFilms.API.dll"]
